@@ -1,0 +1,2 @@
+# KisconScript
+For Tampermonkey
