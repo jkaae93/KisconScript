@@ -1,11 +1,11 @@
 // ==UserScript==
 // @name         get kiscon - machin
 // @namespace    http://tampermonkey.net/
-// @version      0.1
+// @version      0.2
 // @description  try to take over the world!
-// @author       You
+// @author       @jkaae93
 // @match        https://www.kiscon.net/gongsi/step_custom.asp
-// @require http://code.jquery.com/jquery-3.6.0.min.js
+// @require      http://code.jquery.com/jquery-3.6.0.min.js
 // @icon         https://www.google.com/s2/favicons?domain=kiscon.net
 // @grant        none
 // ==/UserScript==
