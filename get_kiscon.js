@@ -1,5 +1,5 @@
 // ==UserScript==
-// @name         get kiscon
+// @name         get kiscon - machin
 // @namespace    http://tampermonkey.net/
 // @version      0.1
 // @description  try to take over the world!
@@ -17,14 +17,13 @@ var putList = [];
 (function() {
     // main
     $('.paginationz_wrap.visible-xs').empty(); // delete mobile page
-    getNameList();
+    console.log('start script');
     setClickEvent();
+    getNameList();
     clickSimpleInfo();
-    console.log('start timeout');
     setTimeout(function() {
         console.log('stopped timeout');
         errHandle();
-        $('.btn_prevNext').find('a')[1].click();
     },20000);
 })();
 
@@ -51,58 +50,61 @@ function getNameList() {
 
 function setClickEvent() {
     $('#simple_info_c').click(function() {
-
         var companyName = $('#strSangho').text().replace(/,/g,' ');
         var ceoName = $('#strCeo').text().replace(/,/g,' ');
         var tel = $('#strTel').text().replace(/,/g,' ');
         var addr = $('#strAddr').text().replace(/,/g,' ');
         var type = $('#strItem').text().replace(/,/g,' ');
-        var data = localStorage.getItem("0");
+        var length = localStorage.length;
+        var expect = Number($('.active').text()) * 5;
+        console.log('current length: ' + (length + 1) + ' except: ' + expect);
 
-        if(data == null) data = [];
-        else data = JSON.parse(data);
         console.log('name ' + companyName);
-        var index = $('#strItem').text().split("]").indexOf("[철근ㆍ콘크리트공사업");
+//        var index = $('#strItem').text().split("]").indexOf("[철근ㆍ콘크리트공사업");
+        var index = $('#strItem').text().split("]").indexOf("[기계설비공사업");
         var state = $('#strItem').text().split("]")[index+2].replace('[','');
-        data.push([companyName,ceoName,tel,addr,state,type]);
-        localStorage.setItem("0", JSON.stringify(data));
+        localStorage.setItem(length, JSON.stringify({"상호" : companyName, "대표자" : ceoName, "전화번호" : tel, "업종상태" : type, "주소" : addr}));
 
         $('.modal_close')[2].click();
         putList.push(companyName);
-        saveRequest();
+        if(length + 1 == expect) {
+            $('.btn_prevNext').find('a')[1].click();
+        } else {
+            console.info('wait next');
+        }
     });
 }
 
 function saveRequest() {
-    var data = localStorage.getItem("0");
-    data = JSON.parse(data);
     var size = Number($('.org01.dml').text().replace(',',''));
-    console.log("size: " + size + " current: " + data.length);
-    if(data.length >= size-1) {
+    console.log("size: " + size + " current: " + localStorage.length);
+    if(localStorage.length >= size-1) {
         if($('.btn_prevNext').find('a')[1].getAttribute("style") != null) { // next page check
             console.log("last page");
-            if(window.confirm("Script is done. download list?")){
-                downloadCsv(data);
+            if(window.confirm("Script is done. Do you want download list?")){
+                downloadCsv();
             } else {
-                console.log("can't download");
+                console.log("download cancled");
             }
         }
     } else {
         var expect = Number($('.active').text()) * 5;
-        if(data.length == expect) {
+        if(localStorage.length == expect) {
+            console.log("go to nextpage");
             $('.btn_prevNext').find('a')[1].click();
         } else {
-            console.warn('please check data. current data is ' + data.length + ' expect data is ' + expect);
+            console.warn('please check localStorage. current data is ' + localStorage.length + ' expect data is ' + expect);
         }
     };
 }
 
 function downloadCsv(data) {
     var lineArray = [];
-    data.forEach(function (infoArray, index) {
-        var line = infoArray.join(",");
-        lineArray.push(index == 0 ? "상호, 대표자, 전화번호, 업종상태, 주소\n" + line : line);
-    });
+    lineArray.push("상호, 대표자, 전화번호, 업종상태, 주소");
+    for (let index = 0; index < localStorage.length; index++) {
+        var element = JSON.parse(localStorage.getItem(index));
+        lineArray.push(buildData(element));
+    }
     var csvContent = lineArray.join("\n");
     var pom = document.createElement('a');
     var blob = new Blob(["\ufeff"+csvContent], {type:'text/csv;charset=utf-8'});
@@ -113,23 +115,31 @@ function downloadCsv(data) {
 }
 
 function clickSimpleInfo() {
-    $('.btn-in.btncol_yo').each(function(index) {
+    $('a.btn-in.btncol_yo').each(function(index) {
         $(this).click();
     });
 }
 
 function errHandle() {
-    nameList.forEach(function(value, index) {
-        if(value != putList[index]) {
-            console.log(value);
-            var data = localStorage.getItem('0');
-            var companyName = value;
-            var ceoName = ceoList[index];
-            if(data == null) data = [];
-            else data = JSON.parse(data);
-            console.log('error company name ' + companyName + ' ceo: ' + ceoName);
-            data.push([companyName,ceoName,'','','','']);
-            localStorage.setItem('0', JSON.stringify(data));
-        }
-    });
+    var expect = Number($('.active').text()) * 5;
+    if(localStorage.length != expect) {
+        console.warn('Check localStorage. current is ' + localStorage.length + ' expect is ' + expect);
+        nameList.forEach(function(value, index) {
+            if(value != putList[index]) {
+                console.log(value);
+                var length = localStorage.length;
+                var companyName = value;
+                var ceoName = ceoList[index];
+                console.log('error company name ' + companyName + ' ceo: ' + ceoName);
+                localStorage.setItem(length, JSON.stringify({"상호" : companyName, "대표자" : ceoName}));
+            }
+        });
+    } else {
+        console.log('all data is done move to nextPage');
+    }
+    saveRequest();
+}
+
+function buildData(value) {
+    return value.상호 + ', ' + value.대표자 + ', ' + value.전화번호 + ', ' + value.업종상태 + ', ' + value.주소;
 }
